@@ -52,8 +52,7 @@ public class VoteSystem {
         if (voting) {
             voting = false;
             OMGPI.g.broadcast(ChatColor.DARK_GREEN + "Voting ended!");
-            OMGPI.g.loadedMap = m == null ? getMostVotedMap() : m;
-            OMGPI.g.broadcast(ChatColor.AQUA + "Selected map is " + OMGPI.g.loadedMap + ".");
+            OMGPI.g.broadcast(ChatColor.AQUA + "Selected map is " + (OMGPI.g.loadedMap = m == null ? getMostVotedMap() : m) + ".");
             OMGPI.g.loadedMap.load();
         }
     }

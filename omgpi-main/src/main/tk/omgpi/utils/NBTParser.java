@@ -1,6 +1,7 @@
 package tk.omgpi.utils;
 
 import org.bukkit.ChatColor;
+import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 
 import static tk.omgpi.utils.ReflectionUtils.*;
@@ -71,6 +72,34 @@ public class NBTParser {
     }
 
     /**
+     * Get Block NBT.
+     *
+     * @param b Bukkit Block.
+     * @return Parsed NBT tag.
+     */
+    public static NBTParser getTagCompound(Block b) {
+        NBTParser nbt = new NBTParser("{}");
+        Class item = getClazz(nmsclasses, "Item");
+        Class tileEntity = getClazz(nmsclasses, "TileEntity");
+        Class registryMaterials = getClazz(nmsclasses, "RegistryMaterials");
+        Class minecraftKey = getClazz(nmsclasses, "MinecraftKey");
+        Class craftWorld = getClazz(cbclasses, "CraftWorld");
+        try {
+            Object te = craftWorld.getDeclaredMethod("getTileEntityAt", int.class, int.class, int.class).invoke(b.getWorld(), b.getX(), b.getY(), b.getZ());
+            if (te == null) {
+                nbt.setString("id", (String) minecraftKey.getDeclaredMethod("getKey").invoke(registryMaterials.getMethod("b", item).invoke(item.getDeclaredField("REGISTRY").get(null), item.getDeclaredMethod("getById", int.class).invoke(null, b.getTypeId()))));
+                nbt.setInt("x", b.getX());
+                nbt.setInt("y", b.getY());
+                nbt.setInt("z", b.getZ());
+            } else nbt.nbtTagCompound = tileEntity.getDeclaredMethod("save", getClazz(nmsclasses, "NBTTagCompound")).invoke(te, nbt.nbtTagCompound);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        nbt.setByte("data", b.getData());
+        return nbt;
+    }
+
+    /**
      * Set NBT "tag" compound of ItemStack clone.
      *
      * @param i Bukkit ItemStack.
@@ -88,8 +117,31 @@ public class NBTParser {
         }
         return null;
     }
+
+    /**
+     * Set NBT of Block.
+     *
+     * @param b Bukkit Block.
+     * @return Block with changed tags.
+     */
+    public Block setTagCompound(Block b) {
+        setInt("x", b.getX());
+        setInt("y", b.getY());
+        setInt("z", b.getZ());
+        if (hasKey("id")) b.setType(new NBTParser("{id:" + getString("id") + ",Count:1}").toItem().getType());
+        if (hasKey("data")) b.setData(getByte("data"));
+        Class tileEntity = getClazz(nmsclasses, "TileEntity");
+        Class craftWorld = getClazz(cbclasses, "CraftWorld");
+        try {
+            Object te = craftWorld.getDeclaredMethod("getTileEntityAt", int.class, int.class, int.class).invoke(b.getWorld(), b.getX(), b.getY(), b.getZ());
+            if (te != null) tileEntity.getDeclaredMethod("a", getClazz(nmsclasses, "NBTTagCompound")).invoke(te, nbtTagCompound);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return b;
+    }
     
-    /* -=-=-=-=-=-=-=-=- NBT OVERRIDE TAGS -=-=-=-=-=-=-=-=- */
+    /* -=-=-=-=-=-=-=-=- NBT TAGS MANIPULATION -=-=-=-=-=-=-=-=- */
 
     //STRING
 
@@ -595,6 +647,7 @@ public class NBTParser {
         return getFloat(nbtTagCompound, key);
     }
 
+    //HAS KEY
 
     /**
      * Check if key is present in given tag

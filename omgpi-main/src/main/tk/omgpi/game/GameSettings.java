@@ -52,6 +52,10 @@ public class GameSettings {
      * Time left set on game start
      */
     public long gameLength;
+    /**
+     * Do players lose if they die
+     */
+    public boolean oneLife;
 
     public GameSettings(Game g) {
         this.game = g;
@@ -65,5 +69,6 @@ public class GameSettings {
         maxPlayers = Bukkit.getServer().getMaxPlayers();
         discoveryLength = g.gamefig.getInt("discoveryLength", 500);
         gameLength = g.gamefig.getLong("gameLength", 1800);
+        oneLife = false;
     }
 }

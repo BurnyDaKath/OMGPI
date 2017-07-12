@@ -14,6 +14,9 @@ import java.util.stream.Collectors;
  * Recommended to set lines in scoreboard on sidebar.
  */
 public class ObjectiveBuffer {
+    /**
+     * ObjectiveBuffer lines. Maximum size is 16 (idiot-proof so you cannot add more than minecraft can handle).
+     */
     public List<String> lines;
 
     public ObjectiveBuffer() {
@@ -30,17 +33,14 @@ public class ObjectiveBuffer {
      * @param o Given objective.
      */
     public void loadInto(Objective o) {
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < 16; i++)
             if (lines.size() > i && lines.get(i) != null) {
                 o.getScore(ChatColor.values()[i] + "").setScore(lines.size() - i);
                 Team t = o.getScoreboard().getTeam(i + "");
                 if (t == null) t = o.getScoreboard().registerNewTeam(i + "");
                 t.addEntry(ChatColor.values()[i] + "");
                 t.setPrefix(lines.get(i).substring(0, Math.min(14, lines.get(i).length())));
-            } else {
-                o.getScoreboard().resetScores(ChatColor.values()[i] + "");
-            }
-        }
+            } else o.getScoreboard().resetScores(ChatColor.values()[i] + "");
     }
 
     /**

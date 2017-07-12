@@ -1,6 +1,7 @@
 package tk.omgpi.game;
 
 import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.inventory.Inventory;
@@ -18,6 +19,8 @@ import tk.omgpi.utils.ReflectionUtils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.function.Predicate;
 
 import static org.bukkit.ChatColor.AQUA;
@@ -197,6 +200,11 @@ public class OMGPlayer extends Hashdatable {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        update();
+        Arrays.stream(Attribute.values()).filter(a -> a != Attribute.GENERIC_ATTACK_SPEED && bukkit.getAttribute(a) != null).map(a -> bukkit.getAttribute(a)).forEach(a -> {
+            a.setBaseValue(a.getDefaultValue());
+            new ArrayList<>(a.getModifiers()).forEach(a::removeModifier);
+        });
         bukkit.setExp(0);
         bukkit.setLevel(0);
         bukkit.setMaxHealth(20);

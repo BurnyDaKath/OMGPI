@@ -15,10 +15,12 @@ import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Team;
 import tk.omgpi.OMGPI;
 import tk.omgpi.events.BukkitEventHandler;
+import tk.omgpi.events.player.OMGDamageCause;
 import tk.omgpi.events.player.OMGDamageEvent;
 import tk.omgpi.events.player.OMGDeathEvent;
 import tk.omgpi.events.player.OMGJumpEvent;
 import tk.omgpi.files.*;
+import tk.omgpi.utils.MovingTwinkle;
 import tk.omgpi.utils.NBTParser;
 
 import java.io.File;
@@ -189,6 +191,7 @@ public class Game extends JavaPlugin implements Listener {
      */
     public void update() {
         OMGPlayer.link.values().forEach(OMGPlayer::update);
+        MovingTwinkle.twinkles.forEach(MovingTwinkle::draw);
         if (state == GameState.DISCOVERY)
             OMGPlayer.link.values().forEach(p -> {
                 p.actionbar = "Discover the map";
@@ -290,7 +293,6 @@ public class Game extends JavaPlugin implements Listener {
      * Check if winners are found out and game can end. Call after any player-related event.
      */
     public void game_checkForEnd() {
-        bar_set();
         if (state == GameState.INGAME) {
             team_lose(OMGTeam.getFiltered(t -> t != spectatorTeam && t.isEmpty()).toArray(new OMGTeam[0]));
             player_updateScoreboardTeams();
@@ -445,13 +447,27 @@ public class Game extends JavaPlugin implements Listener {
      * @param e Associated OMGEvent
      */
     public void event_player_death(OMGDeathEvent e) {
-        e.damaged.dropItems();
-        e.damaged.respawn();
-        e.sendDeathMessage();
-        player_reward(e.damaged, "death");
-        if (e.damaged.lastDamager != null && e.damaged.lastDamager != e.damaged) {
-            e.damaged.lastDamager.play_sound_ding();
-            player_reward(e.damaged.lastDamager, "kill");
+        if (settings.oneLife) {
+            e.damaged.dropItems();
+            e.damaged.setTeam(spectatorTeam);
+            if (e.damageEvent.reason == OMGDamageCause.VOID)
+                e.damaged.bukkit.teleport(e.damaged.bukkit.getWorld().getSpawnLocation());
+            e.sendDeathMessage();
+            e.damaged.played = false;
+            player_reward(e.damaged, "loser");
+            if (e.damaged.lastDamager != null && e.damaged.lastDamager != e.damaged) {
+                e.damaged.lastDamager.play_sound_ding();
+                player_reward(e.damaged.lastDamager, "kill");
+            }
+        } else {
+            e.damaged.dropItems();
+            e.damaged.respawn();
+            e.sendDeathMessage();
+            player_reward(e.damaged, "death");
+            if (e.damaged.lastDamager != null && e.damaged.lastDamager != e.damaged) {
+                e.damaged.lastDamager.play_sound_ding();
+                player_reward(e.damaged.lastDamager, "kill");
+            }
         }
     }
 
@@ -681,9 +697,7 @@ public class Game extends JavaPlugin implements Listener {
                 p.bukkit.getWorld().dropItemNaturally(p.bukkit.getLocation(), nbt.toItem());
             else p.bukkit.getInventory().addItem(nbt.toItem());
             p.bukkit.sendMessage(ChatColor.DARK_AQUA + "Item bought.");
-        } else {
-            p.bukkit.sendMessage(ChatColor.DARK_AQUA + "Not enough game coins.");
-        }
+        } else p.bukkit.sendMessage(ChatColor.DARK_AQUA + "Not enough game coins.");
         game_checkForEnd();
     }
 
@@ -705,7 +719,7 @@ public class Game extends JavaPlugin implements Listener {
      */
     public Location player_compassLocation(OMGPlayer p) {
         Optional<OMGPlayer> a = OMGPlayer.getFiltered(c -> c.team != spectatorTeam && c != p && (!OMGTeam.anyElseRegistered() || c.team != p.team)).stream().sorted(Comparator.comparingDouble(c -> c.bukkit.getLocation().distance(p.bukkit.getLocation()))).findFirst();
-        return a.isPresent() ? a.get().bukkit.getLocation() : p.bukkit.getWorld().getSpawnLocation();
+        return a.map(omgPlayer -> omgPlayer.bukkit.getLocation()).orElseGet(() -> p.bukkit.getWorld().getSpawnLocation());
     }
 
     /**
