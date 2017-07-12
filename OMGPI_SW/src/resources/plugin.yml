@@ -1,5 +1,5 @@
 name: OMGPI_SW
 main: tk.omgpi.OMGPI_SW.OMGPI_SW
-version: 1.0
+version: 1.0.7
 authors: [BurnyDaKath]
-descrption: OMGPI Example plugin - Skywars
+description: OMGPI Example plugin - Skywars

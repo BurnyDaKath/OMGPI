@@ -2,4 +2,4 @@ name: OMGPI
 main: tk.omgpi.OMGPI
 version: 1.0.7
 authors: [BurnyDaKath, Clijmart]
-descrption: Open Minecraft Game Programming Interface
+description: Open Minecraft Game Programming Interface
